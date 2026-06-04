@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+  
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FOCCUS — Painel Editorial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green: #1D9E75;
-    --green-dark: #0F6E56;
-    --green-light: #E1F5EE;
-    --green-text: #0F6E56;
-    --amber-light: #FAEEDA;
-    --amber-text: #854F0B;
-    --blue-light: #E6F1FB;
-    --blue-text: #185FA5;
-    --bg: #F7F6F3;
-    --surface: #FFFFFF;
-    --surface2: #F0EEE9;
-    --border: rgba(0,0,0,0.08);
-    --border-med: rgba(0,0,0,0.13);
-    --text: #1A1A18;
-    --text-2: #6B6B67;
-    --text-3: #A0A09B;
+    --green: #EECC02;
+    --green-dark: #C9AA00;
+    --green-light: rgba(238,204,2,0.15);
+    --green-text: #EECC02;
+    --amber-light: rgba(238,204,2,0.12);
+    --amber-text: #EECC02;
+    --blue-light: rgba(255,255,255,0.08);
+    --blue-text: rgba(255,255,255,0.7);
+    --bg: #1a1a1a;
+    --surface: #222222;
+    --surface2: #2a2a2a;
+    --border: rgba(255,255,255,0.08);
+    --border-med: rgba(255,255,255,0.15);
+    --text: #FFFFFF;
+    --text-2: rgba(255,255,255,0.75);
+    --text-3: rgba(255,255,255,0.35);
     --radius: 10px;
     --radius-lg: 14px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
@@ -79,7 +81,7 @@
   .meta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; box-shadow: var(--shadow); }
   .meta-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
   .meta-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; }
-  .meta-num { font-size: 26px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+  .meta-num { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #FFFFFF; letter-spacing: 1px; }
   .meta-of { font-size: 13px; color: var(--text-3); }
   .meta-bar { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
   .meta-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s ease; }
@@ -87,7 +89,7 @@
   .tabs { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
   .tab { flex: 1; padding: 7px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; border: none; background: transparent; cursor: pointer; color: #FFFFFF; border-radius: 7px; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; }
   .tab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-  .tab:hover { background: rgba(255,255,255,0.1); color: #fff; } .tab.active { background: #EECC02; color: #1a1a1a; font-weight: 700; }
+  .tab:hover { background: rgba(255,255,255,0.1); color: #fff; } .tab:hover { background: rgba(255,255,255,0.08); } .tab.active { background: #EECC02; color: #1a1a1a; font-weight: 700; }
 
   .section { display: none; }
   .section.visible { display: block; }
@@ -202,7 +204,7 @@
 </div>
 
 <div class="topbar">
-  <span class="logo">FOCCUS</span>
+  <div style="display:flex;flex-direction:column"><span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#FFFFFF;line-height:1">FOCCUS</span><span style="font-size:8px;letter-spacing:3px;color:rgba(255,255,255,0.35);font-weight:300;margin-top:1px">SPORT FITNESS</span></div>
   <div class="topbar-right">
     <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-text">conectando...</span></div>
     <span class="month-pill" id="current-month"></span>
