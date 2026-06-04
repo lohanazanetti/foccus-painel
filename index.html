@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOCCUS — Painel Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --green-text: #0F6E56;
+    --amber-light: #FAEEDA;
+    --amber-text: #854F0B;
+    --blue-light: #E6F1FB;
+    --blue-text: #185FA5;
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --surface2: #F0EEE9;
+    --border: rgba(0,0,0,0.08);
+    --border-med: rgba(0,0,0,0.13);
+    --text: #1A1A18;
+    --text-2: #6B6B67;
+    --text-3: #A0A09B;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; letter-spacing: 3px; color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .month-pill { font-size: 12px; color: var(--text-2); background: var(--bg); border: 1px solid var(--border-med); border-radius: 20px; padding: 4px 12px; }
+  .sync-status { font-size: 11px; color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); }
+  .sync-dot.online { background: var(--green); }
+  .admin-badge { font-size: 11px; background: var(--green); color: #fff; border-radius: 20px; padding: 3px 10px; font-weight: 500; }
+  .admin-lock { font-size: 11px; color: var(--text-3); cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--border-med); }
+  .admin-lock:hover { background: var(--surface2); }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  /* Admin quick entry */
+  .quick-box { background: var(--surface); border: 1.5px solid var(--green); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 0 0 3px rgba(29,158,117,0.08); }
+  .quick-label { font-size: 11px; color: var(--green-text); text-transform: uppercase; letter-spacing: .7px; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .quick-label svg { width: 13px; height: 13px; stroke: var(--green); fill: none; stroke-width: 2; }
+  .quick-row { display: flex; gap: 8px; align-items: stretch; }
+  .quick-input { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 9px 12px; border: 1px solid var(--border-med); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; transition: border .15s; }
+  .quick-input:focus { border-color: var(--green); background: #fff; }
+  .quick-input::placeholder { color: var(--text-3); }
+  .btn-mic { width: 40px; height: 40px; border-radius: var(--radius); border: 1px solid var(--border-med); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
+  .btn-mic svg { width: 16px; height: 16px; stroke: var(--text-2); fill: none; stroke-width: 2; }
+  .btn-mic:hover { background: var(--surface2); }
+  .btn-mic.recording { background: #fcebeb; border-color: #a32d2d; animation: pulse .8s infinite; }
+  .btn-mic.recording svg { stroke: #a32d2d; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .quick-hint { font-size: 11px; color: var(--text-3); margin-top: 6px; line-height: 1.5; }
+  .quick-hint strong { color: var(--text-2); }
+  .quick-processing { font-size: 12px; color: var(--green-text); margin-top: 6px; display: none; align-items: center; gap: 6px; }
+  .quick-processing.visible { display: flex; }
+  .mini-spinner { width: 12px; height: 12px; border: 1.5px solid var(--green-light); border-top-color: var(--green); border-radius: 50%; animation: spin .6s linear infinite; }
+
+  /* Senha admin */
+  .senha-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .senha-overlay.hidden { display: none; }
+  .senha-box { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; width: 300px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+  .senha-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .senha-sub { font-size: 12px; color: var(--text-3); margin-bottom: 1rem; }
+  .senha-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 9px 12px; border: 1px solid var(--border-med); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; margin-bottom: 10px; }
+  .senha-input:focus { border-color: var(--green); }
+  .senha-error { font-size: 12px; color: #a32d2d; margin-bottom: 8px; display: none; }
+  .senha-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .metas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .meta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; box-shadow: var(--shadow); }
+  .meta-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .meta-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; }
+  .meta-num { font-size: 26px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+  .meta-of { font-size: 13px; color: var(--text-3); }
+  .meta-bar { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .meta-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s ease; }
+
+  .tabs { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+  .tab { flex: 1; padding: 7px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; border: none; background: transparent; cursor: pointer; color: #FFFFFF; border-radius: 7px; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; }
+  .tab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .tab:hover { background: rgba(255,255,255,0.1); color: #fff; } .tab.active { background: #EECC02; color: #1a1a1a; font-weight: 700; }
+
+  .section { display: none; }
+  .section.visible { display: block; }
+  .top-actions { display: flex; justify-content: flex-end; margin-bottom: .75rem; }
+
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border-med); background: var(--surface); color: var(--text-2); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .btn:hover { background: var(--surface2); color: var(--text); }
+  .btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-green:hover { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
+  .btn-danger { color: #a32d2d; }
+  .btn-danger:hover { background: #fcebeb; }
+
+  .form-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); display: none; }
+  .form-box.open { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-field label { display: block; font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+  input[type=text], input[type=date], input[type=url], select, textarea { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border-med); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; transition: border .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--green); background: #fff; }
+  textarea { resize: vertical; min-height: 58px; }
+  .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: .75rem; box-shadow: var(--shadow); transition: box-shadow .15s; }
+  .card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+  .card-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .card-desc { font-size: 13px; color: var(--text-2); margin-bottom: .75rem; line-height: 1.55; }
+  .card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .badge svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .badge-planejamento { background: var(--amber-light); color: var(--amber-text); }
+  .badge-aprovado { background: var(--green-light); color: var(--green-text); }
+  .badge-publicado { background: var(--blue-light); color: var(--blue-text); }
+  .badge-neutral { background: var(--surface2); color: var(--text-2); border: 1px solid var(--border); }
+
+  .card-actions { display: flex; gap: 6px; margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem; flex-wrap: wrap; align-items: center; }
+  .status-select { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border-med); border-radius: var(--radius); background: var(--bg); color: var(--text); cursor: pointer; }
+
+  .img-preview { width: 100%; max-height: 160px; object-fit: cover; border-radius: var(--radius); margin-top: 10px; display: block; border: 1px solid var(--border); }
+
+  .anexo-area { margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem; display: none; }
+  .anexo-area.open { display: block; }
+  .anexo-title { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: .6px; margin-bottom: .6rem; }
+  .anexo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .anexo-box { border: 1px dashed var(--border-med); border-radius: var(--radius); padding: .75rem; background: var(--bg); }
+  .anexo-box-label { font-size: 11px; color: var(--text-3); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .anexo-box-label svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .upload-label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 10px; border-radius: var(--radius); border: 1px solid var(--border-med); background: var(--surface); color: var(--text-2); cursor: pointer; transition: all .15s; }
+  .upload-label svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .upload-label:hover { background: var(--surface2); color: var(--text); }
+  .link-preview { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: var(--blue-text); background: var(--blue-light); border-radius: var(--radius); padding: 5px 8px; word-break: break-all; text-decoration: none; }
+  .link-preview svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+  .comment-area { margin-top: .5rem; display: none; }
+  .comment-area.open { display: block; }
+  .comment-list { max-height: 130px; overflow-y: auto; margin-bottom: 6px; }
+  .comment-item { font-size: 12px; color: var(--text-2); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.4; }
+  .comment-empty { font-size: 12px; color: var(--text-3); padding: 4px 0; }
+  .comment-row { display: flex; gap: 6px; }
+  .comment-input { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 10px; border: 1px solid var(--border-med); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; }
+  .comment-input:focus { border-color: var(--green); background: #fff; }
+
+  .cal-wrap { margin-bottom: 1.25rem; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-day-header { font-size: 11px; color: var(--text-3); text-align: center; padding: 4px 0; font-weight: 500; letter-spacing: .5px; }
+  .cal-cell { border: 1px solid var(--border); border-radius: 8px; padding: 4px; min-height: 58px; background: var(--surface); }
+  .cal-cell.other { opacity: .3; }
+  .cal-cell.today { border-color: var(--green); }
+  .cal-num { font-size: 11px; color: var(--text-3); margin-bottom: 2px; font-family: 'DM Mono', monospace; }
+  .cal-event { font-size: 9px; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-event.planejamento { background: var(--amber-light); color: var(--amber-text); }
+  .cal-event.aprovado { background: var(--green-light); color: var(--green-text); }
+  .cal-event.publicado { background: var(--blue-light); color: var(--blue-text); }
+
+  .section-label { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: .7px; margin-bottom: .6rem; }
+  .empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-3); font-size: 13px; }
+  .empty svg { width: 32px; height: 32px; stroke: var(--text-3); fill: none; stroke-width: 1.2; display: block; margin: 0 auto .5rem; }
+
+  .loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 999; }
+  .loading-overlay.hidden { display: none; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border-med); border-top-color: var(--green); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--text-3); }
+
+  @media (max-width: 600px) {
+    .metas-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .anexo-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Carregando painel...</div>
+</div>
+
+<!-- Modal senha admin -->
+<div class="senha-overlay hidden" id="senha-overlay">
+  <div class="senha-box">
+    <div class="senha-title">Modo administrador</div>
+    <div class="senha-sub">Digite a senha para acessar os recursos de gestão.</div>
+    <input class="senha-input" type="password" id="senha-input" placeholder="Senha..." onkeydown="if(event.key==='Enter')verificarSenha()">
+    <div class="senha-error" id="senha-error">Senha incorreta. Tente novamente.</div>
+    <div class="senha-actions">
+      <button class="btn" onclick="fecharSenha()">Cancelar</button>
+      <button class="btn btn-green" onclick="verificarSenha()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <span class="logo">FOCCUS</span>
+  <div class="topbar-right">
+    <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-text">conectando...</span></div>
+    <span class="month-pill" id="current-month"></span>
+    <span class="admin-badge" id="admin-badge" style="display:none">admin</span>
+    <span class="admin-lock" id="admin-lock" onclick="abrirSenha()" title="Modo admin">
+      <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      admin
+    </span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Campo de entrada rápida (só admin) -->
+  <div class="quick-box" id="quick-box" style="display:none">
+    <div class="quick-label">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      entrada rápida
+    </div>
+    <div class="quick-row">
+      <input class="quick-input" type="text" id="quick-input" placeholder="Ex: reel mobilidade matinal, dia 10 de junho, calendário oficial, aprovado" onkeydown="if(event.key==='Enter')processarEntrada()">
+      <button class="btn-mic" id="btn-mic" onclick="toggleVoz()" title="Falar">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button class="btn btn-green" onclick="processarEntrada()">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="quick-hint">Fale ou digite naturalmente. Ex: <strong>"carrossel horários, dia 15 de junho, sugestão"</strong> ou <strong>"reel treino funcional, dia 22, calendário, publicado"</strong></div>
+    <div class="quick-processing" id="quick-processing">
+      <div class="mini-spinner"></div>
+      <span id="quick-status">Interpretando...</span>
+    </div>
+  </div>
+
+  <div class="metas-grid">
+    <div class="meta-card">
+      <div class="meta-label">Reels</div>
+      <div class="meta-row"><span class="meta-num" id="reels-done">0</span><span class="meta-of">/ 4</span></div>
+      <div class="meta-bar"><div class="meta-fill" id="reels-bar" style="width:0%"></div></div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-label">Posts simples</div>
+      <div class="meta-row"><span class="meta-num" id="posts-done">0</span><span class="meta-of">/ 2</span></div>
+      <div class="meta-bar"><div class="meta-fill" id="posts-bar" style="width:0%"></div></div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-label">Carrosseis</div>
+      <div class="meta-row"><span class="meta-num" id="carros-done">0</span><span class="meta-of">/ 2</span></div>
+      <div class="meta-bar"><div class="meta-fill" id="carros-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('calendario',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Calendário
+    </button>
+    <button class="tab" onclick="showTab('sugestoes',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 0 1 7-7zm0 18v2"/></svg>
+      Sugestões
+    </button>
+    <button class="tab" onclick="showTab('materiais',this)">
+      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Central de Materiais
+    </button>
+    <button class="tab tab-admin" id="tab-btn-saldo" onclick="showTab('saldo',this)" style="display:none">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Saldo
+    </button>
+  </div>
+
+  <div id="tab-sugestoes" class="section">
+    <div class="top-actions">
+      <button class="btn btn-green" onclick="toggleForm('sug')">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nova sugestão
+      </button>
+    </div>
+    <div class="form-box" id="form-sug">
+      <div class="form-grid">
+        <div class="form-field"><label>Título</label><input type="text" id="s-titulo" placeholder="Ex: Dica de treino funcional"></div>
+        <div class="form-field"><label>Data sugerida</label><input type="date" id="s-data"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label>Tipo</label>
+          <select id="s-tipo"><option>Reel</option><option>Post simples</option><option>Carrossel</option></select>
+        </div>
+        <div class="form-field"><label>Status</label>
+          <select id="s-status"><option>planejamento</option><option>programado</option><option>publicado</option></select>
+        </div>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="form-field"><label>Descrição (opcional)</label><input type="text" id="s-desc" placeholder="Detalhes adicionais..."></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="toggleForm('sug')">Cancelar</button>
+        <button class="btn btn-green" onclick="addSugestao()">Adicionar sugestão</button>
+      </div>
+    </div>
+    <div id="lista-sugestoes"></div>
+  </div>
+
+  <div id="tab-calendario" class="section visible">
+    <div class="top-actions">
+      <button class="btn btn-green" onclick="toggleForm('ofic')">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Adicionar ao calendário
+      </button>
+    </div>
+    <div class="form-box" id="form-ofic">
+      <div class="form-grid">
+        <div class="form-field"><label>Título</label><input type="text" id="o-titulo" placeholder="Título do conteúdo"></div>
+        <div class="form-field"><label>Data</label><input type="date" id="o-data"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label>Tipo</label>
+          <select id="o-tipo"><option>Reel</option><option>Post simples</option><option>Carrossel</option></select>
+        </div>
+        <div class="form-field"><label>Status</label>
+          <select id="o-status"><option>planejamento</option><option>programado</option><option>publicado</option></select>
+        </div>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="form-field"><label>Descrição (opcional)</label><input type="text" id="o-desc" placeholder="Detalhes adicionais..."></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="toggleForm('ofic')">Cancelar</button>
+        <button class="btn btn-green" onclick="addOficial()">Adicionar</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <button class="btn" onclick="window.navegarMes(-1)">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span id="cal-mes-label" style="font-size:13px;font-weight:500;color:var(--text-2)"></span>
+      <button class="btn" onclick="window.navegarMes(1)">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="cal-wrap" id="cal-container"></div>
+    <div class="section-label">Itens do mês</div>
+    <div id="lista-oficial"></div>
+  </div>
+  <!-- Aba Central de Materiais -->
+  <div id="tab-materiais" class="section">
+    <div id="materiais-container"></div>
+  </div>
+
+  <!-- Aba Saldo (só admin) -->
+  <div id="tab-saldo" class="section">
+    <div id="saldo-container"></div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBGad7zjQIfkodoy6ZPEGQhE5wrnk-Uu1M",
+  authDomain: "foccus-painel.firebaseapp.com",
+  projectId: "foccus-painel",
+  storageBucket: "foccus-painel.firebasestorage.app",
+  messagingSenderId: "61264214035",
+  appId: "1:61264214035:web:a7f50a32ee0993fe1a27e6"
+};
+
+const ADMIN_SENHA = "foccus2026";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const now = new Date();
+let calMonth = now.getMonth();
+let calYear = now.getFullYear();
+const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+document.getElementById('current-month').textContent = monthNames[now.getMonth()] + ' ' + now.getFullYear();
+
+window.navegarMes = function(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  document.getElementById('cal-mes-label').textContent = monthNames[calMonth] + ' ' + calYear;
+  document.getElementById('current-month').textContent = monthNames[calMonth] + ' ' + calYear;
+  renderCalendarioNav();
+  updateMetas();
+  renderSaldo();
+  renderOficial();
+};
+
+const dot = document.getElementById('sync-dot');
+const syncText = document.getElementById('sync-text');
+function setOnline() { dot.classList.add('online'); syncText.textContent = 'sincronizado'; }
+function setOffline() { dot.classList.remove('online'); syncText.textContent = 'offline'; }
+
+let sugestoes = [];
+let oficial = [];
+let isAdmin = false;
+let recognition = null;
+let isRecording = false;
+
+// --- Admin ---
+window.abrirSenha = function() {
+  document.getElementById('senha-overlay').classList.remove('hidden');
+  document.getElementById('senha-input').focus();
+};
+window.fecharSenha = function() {
+  document.getElementById('senha-overlay').classList.add('hidden');
+  document.getElementById('senha-input').value = '';
+  document.getElementById('senha-error').style.display = 'none';
+};
+window.verificarSenha = function() {
+  const val = document.getElementById('senha-input').value;
+  if (val === ADMIN_SENHA) {
+    isAdmin = true;
+    document.getElementById('admin-badge').style.display = 'inline-flex';
+    document.getElementById('admin-lock').style.display = 'none';
+    document.getElementById('quick-box').style.display = 'block';
+    document.getElementById('tab-btn-saldo').style.display = 'flex';
+    renderMateriais();
+    window.fecharSenha();
+  } else {
+    document.getElementById('senha-error').style.display = 'block';
+    document.getElementById('senha-input').value = '';
+    document.getElementById('senha-input').focus();
+  }
+};
+
+// --- Voz ---
+window.toggleVoz = function() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Seu navegador não suporta reconhecimento de voz. Use o Chrome.');
+    return;
+  }
+  if (isRecording) {
+    recognition && recognition.stop();
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = () => {
+    isRecording = true;
+    document.getElementById('btn-mic').classList.add('recording');
+  };
+  recognition.onresult = (e) => {
+    const texto = e.results[0][0].transcript;
+    document.getElementById('quick-input').value = texto;
+    isRecording = false;
+    document.getElementById('btn-mic').classList.remove('recording');
+    processarEntrada();
+  };
+  recognition.onerror = () => {
+    isRecording = false;
+    document.getElementById('btn-mic').classList.remove('recording');
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    document.getElementById('btn-mic').classList.remove('recording');
+  };
+  recognition.start();
+};
+
+// --- Entrada rápida com Claude ---
+window.processarEntrada = async function() {
+  const texto = document.getElementById('quick-input').value.trim();
+  if (!texto) return;
+
+  const proc = document.getElementById('quick-processing');
+  const status = document.getElementById('quick-status');
+  proc.classList.add('visible');
+  status.textContent = 'Interpretando...';
+
+  const anoAtual = now.getFullYear();
+  const mesAtual = now.getMonth() + 1;
+
+  const prompt = `Você é um assistente que interpreta comandos em português para um painel editorial de redes sociais.
+
+Analise o texto abaixo e extraia UM OU MAIS itens de conteúdo. Para cada item retorne um objeto JSON.
+
+Regras:
+- "tipo" deve ser exatamente: "Reel", "Post simples" ou "Carrossel"
+- "destino" deve ser: "sugestoes" ou "oficial"
+- "status" deve ser: "planejamento", "aprovado" ou "publicado"
+- "data" deve ser no formato YYYY-MM-DD. Ano atual: ${anoAtual}, mês atual: ${mesAtual}
+- Se não mencionar destino, use "sugestoes"
+- Se não mencionar status, use "planejamento"
+- Se não mencionar data, deixe string vazia
+- "titulo" deve ser um título curto e descritivo
+- "desc" deve ser uma descrição curta do conteúdo
+
+Retorne APENAS um array JSON válido, sem markdown, sem explicação.
+
+Texto: "${texto}"`;
+
+  try {
+    const resp = await fetch("/.netlify/functions/interpretar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto, anoAtual, mesAtual })
+    });
+
+    const itens = await resp.json();
+
+    status.textContent = `Salvando ${itens.length} item(s)...`;
+
+    for (const item of itens) {
+      if (item.destino === 'oficial') {
+        await addDoc(collection(db, 'oficial'), {
+          titulo: item.titulo || 'Sem título',
+          desc: item.desc || '',
+          data: item.data || '',
+          tipo: item.tipo || 'Reel',
+          status: item.status || 'planejamento',
+          comments: [],
+          img: null,
+          link: '',
+          criadoEm: serverTimestamp()
+        });
+      } else {
+        await addDoc(collection(db, 'sugestoes'), {
+          titulo: item.titulo || 'Sem título',
+          desc: item.desc || '',
+          data: item.data || '',
+          tipo: item.tipo || 'Reel',
+          status: item.status || 'planejamento',
+          comments: [],
+          img: null,
+          criadoEm: serverTimestamp()
+        });
+      }
+    }
+
+    document.getElementById('quick-input').value = '';
+    status.textContent = `✓ ${itens.length} item(s) adicionado(s)!`;
+    setTimeout(() => proc.classList.remove('visible'), 2500);
+
+  } catch(e) {
+    status.textContent = 'Erro ao interpretar. Tente novamente.';
+    setTimeout(() => proc.classList.remove('visible'), 2500);
+  }
+};
+
+// --- SVG icons ---
+const iCal = `<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;display:inline-block;vertical-align:-1px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+const iFile = `<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;display:inline-block;vertical-align:-1px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+const iMsg = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+const iClip = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
+const iTrash = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+const iUp = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+const iLink = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+const iExt = `<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+const iPhoto = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+
+function statusBadge(s) {
+  const map = { 'planejamento': 'badge-planejamento', 'programado': 'badge-aprovado', 'publicado': 'badge-publicado' };
+  return `<span class="badge ${map[s]||'badge-planejamento'}">${s}</span>`;
+}
+function typeBadge(t) { return `<span class="badge badge-neutral">${iFile} ${t}</span>`; }
+function dateBadge(d) { if (!d) return ''; const [y,m,day] = d.split('-'); return `<span class="badge badge-neutral">${iCal} ${day}/${m}</span>`; }
+
+function renderSugestoes() {
+  const el = document.getElementById('lista-sugestoes');
+  if (!sugestoes.length) {
+    el.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg>Nenhuma sugestão ainda. Adicione a primeira!</div>`;
+    return;
+  }
+  el.innerHTML = sugestoes.map(s => `
+  <div class="card">
+    <div class="card-head"><div class="card-title">${s.titulo}</div>${statusBadge(s.status)}</div>
+    <div class="card-desc">${s.desc||'Sem descrição.'}</div>
+    <div class="card-meta">${typeBadge(s.tipo)}${dateBadge(s.data)}</div>
+    ${s.img ? `<img src="${s.img}" class="img-preview" alt="imagem">` : ''}
+    <div class="card-actions">
+      <select class="status-select" onchange="window.changeStatus('s','${s.id}',this.value)">
+        <option ${s.status==='planejamento'?'selected':''}>planejamento</option>
+        <option ${s.status==='programado'?'selected':''}>programado</option>
+        <option ${s.status==='publicado'?'selected':''}>publicado</option>
+      </select>
+      ${s.status==='aprovado' ? `<button class="btn btn-green" onclick="window.moverParaCalendario('${s.id}')">${iCal} Mover pro calendário</button>` : ''}
+      <button class="btn" onclick="window.toggleEl('ca-s-${s.id}')">${iMsg} Comentários (${(s.comments||[]).length})</button>
+      <label class="btn" style="cursor:pointer">${iUp} Upload<input type="file" accept="image/*" style="display:none" onchange="window.handleImg(event,'s','${s.id}')"></label>
+      <button class="btn btn-danger" onclick="window.deleteSug('${s.id}')">${iTrash}</button>
+    </div>
+    <div class="comment-area" id="ca-s-${s.id}">
+      <div class="comment-list">${(s.comments||[]).length ? (s.comments||[]).map(c=>`<div class="comment-item">${c}</div>`).join('') : '<div class="comment-empty">Sem comentários ainda.</div>'}</div>
+      <div class="comment-row">
+        <input class="comment-input" type="text" placeholder="Escreva um comentário..." id="ci-s-${s.id}" onkeydown="if(event.key==='Enter')window.addComment('s','${s.id}')">
+        <button class="btn btn-green" onclick="window.addComment('s','${s.id}')">Enviar</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+function renderOficial() {
+  renderCalendario();
+  const el = document.getElementById('lista-oficial');
+  const itensMes = oficial.filter(o => {
+    if (!o.data) return false;
+    const [y, m] = o.data.split('-');
+    return parseInt(y) === calYear && parseInt(m) === calMonth + 1;
+  });
+  if (!itensMes.length) {
+    el.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Nenhum item neste mês ainda.</div>`;
+    return;
+  }
+  el.innerHTML = itensMes.map(o => `
+  <div class="card">
+    <div class="card-head"><div class="card-title">${o.titulo}</div>${statusBadge(o.status)}</div>
+    <div class="card-desc">${o.desc||'Sem descrição.'}</div>
+    <div class="card-meta">${typeBadge(o.tipo)}${dateBadge(o.data)}</div>
+    <div class="card-actions">
+      <select class="status-select" onchange="window.changeStatus('o','${o.id}',this.value)">
+        <option ${o.status==='planejamento'?'selected':''}>planejamento</option>
+        <option ${o.status==='programado'?'selected':''}>programado</option>
+        <option ${o.status==='publicado'?'selected':''}>publicado</option>
+      </select>
+      <button class="btn" onclick="window.toggleEl('anx-${o.id}')">${iClip} Anexar conteúdo</button>
+      <button class="btn" onclick="window.toggleEl('ca-o-${o.id}')">${iMsg} Comentários (${(o.comments||[]).length})</button>
+      <button class="btn btn-danger" onclick="window.deleteOfic('${o.id}')">${iTrash}</button>
+    </div>
+    <div class="anexo-area" id="anx-${o.id}">
+      <div class="anexo-title">Conteúdo para aprovação</div>
+      <div class="anexo-grid">
+        <div class="anexo-box">
+          <div class="anexo-box-label">${iPhoto} Imagem (upload direto)</div>
+          <label class="upload-label">${iUp} Escolher arquivo<input type="file" accept="image/*" style="display:none" onchange="window.handleImgOficial(event,'${o.id}')"></label>
+          ${o.img ? `<img src="${o.img}" class="img-preview" alt="design">` : ''}
+        </div>
+        <div class="anexo-box">
+          <div class="anexo-box-label">${iLink} Link externo (Drive, YouTube...)</div>
+          <input type="url" placeholder="Cole o link aqui..." value="${o.link||''}" onchange="window.saveLink('${o.id}',this.value)" style="margin-bottom:6px">
+          ${o.link ? `<a class="link-preview" href="${o.link}" target="_blank" rel="noopener">${iExt} ${o.link.length>38?o.link.slice(0,38)+'...':o.link}</a>` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="comment-area" id="ca-o-${o.id}">
+      <div class="comment-list">${(o.comments||[]).length ? (o.comments||[]).map(c=>`<div class="comment-item">${c}</div>`).join('') : '<div class="comment-empty">Sem comentários ainda.</div>'}</div>
+      <div class="comment-row">
+        <input class="comment-input" type="text" placeholder="Escreva um comentário..." id="ci-o-${o.id}" onkeydown="if(event.key==='Enter')window.addComment('o','${o.id}')">
+        <button class="btn btn-green" onclick="window.addComment('o','${o.id}')">Enviar</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+function renderCalendario() { renderCalendarioNav(); }
+
+function renderCalendarioNav() {
+  const el = document.getElementById('cal-container');
+  if (!el) return;
+  const y = calYear, m = calMonth;
+  const firstDay = (new Date(y, m, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const days = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  let html = `<div class="cal-grid">${days.map(d=>`<div class="cal-day-header">${d}</div>`).join('')}`;
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell other"></div>`;
+  const today = now.getDate();
+  const isCurrentMonth = y === now.getFullYear() && m === now.getMonth();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const events = oficial.filter(o => o.data === dateStr);
+    const isToday = (isCurrentMonth && d === today) ? ' today' : '';
+    html += `<div class="cal-cell${isToday}" onclick="window.abrirFormNaData('${dateStr}')" style="cursor:pointer" title="Clique para adicionar"><div class="cal-num">${d}</div>${events.map(e=>`<div class="cal-event ${e.status}" title="${e.titulo}">${e.titulo}</div>`).join('')}</div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function updateMetas() {
+  const pub = oficial.filter(o => {
+    if (o.status !== 'publicado') return false;
+    if (!o.data) return false;
+    const [y, m] = o.data.split('-');
+    return parseInt(y) === calYear && parseInt(m) === calMonth + 1;
+  });
+  const reels = pub.filter(o => o.tipo === 'Reel').length;
+  const posts = pub.filter(o => o.tipo === 'Post simples').length;
+  const carros = pub.filter(o => o.tipo === 'Carrossel').length;
+  document.getElementById('reels-done').textContent = reels;
+  document.getElementById('posts-done').textContent = posts;
+  document.getElementById('carros-done').textContent = carros;
+  document.getElementById('reels-bar').style.width = Math.min(100, Math.round(reels/4*100)) + '%';
+  document.getElementById('posts-bar').style.width = Math.min(100, Math.round(posts/2*100)) + '%';
+  document.getElementById('carros-bar').style.width = Math.min(100, Math.round(carros/2*100)) + '%';
+}
+
+// --- Configuração de preços FOCCUS ---
+const PACOTE_BASE = 500;
+const PRECOS = { 'Reel': 85, 'Post simples': 30, 'Carrossel': 50 };
+const METAS = { 'Reel': 4, 'Post simples': 2, 'Carrossel': 2 };
+
+// --- Central de Materiais ---
+let materiais = [];
+
+function renderMateriais() {
+  const el = document.getElementById('materiais-container');
+  if (!el) return;
+
+  const isAdm = isAdmin;
+  el.innerHTML = `
+  ${isAdm ? `<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
+    <button class="btn btn-green" onclick="window.toggleMatForm()">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+      Adicionar material
+    </button>
+  </div>
+  <div class="form-box" id="form-mat">
+    <div class="form-grid">
+      <div class="form-field"><label>Título</label><input type="text" id="mat-titulo" placeholder="Ex: Fotos semana 1 de junho"></div>
+      <div class="form-field"><label>Tipo</label>
+        <select id="mat-tipo"><option>Link Drive</option><option>Template</option><option>Campanha</option><option>Outro</option></select>
+      </div>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-field"><label>Link</label><input type="url" id="mat-link" placeholder="https://drive.google.com/..."></div>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-field"><label>Descrição (opcional)</label><input type="text" id="mat-desc" placeholder="Detalhes sobre o material..."></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="window.toggleMatForm()">Cancelar</button>
+      <button class="btn btn-green" onclick="window.addMaterial()">Adicionar</button>
+    </div>
+  </div>` : ''}
+  ${materiais.length === 0 ? '<div class="empty"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Nenhum material disponível ainda.</div>' :
+    materiais.map(m => `
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">${m.titulo}</div>
+          <span class="badge badge-neutral" style="margin-top:4px">${m.tipo}</span>
+        </div>
+        ${isAdm ? `<button class="btn btn-danger" onclick="window.deleteMaterial('${m.id}')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
+      </div>
+      ${m.desc ? `<div class="card-desc">${m.desc}</div>` : ''}
+      ${m.link ? `<a href="${m.link}" target="_blank" rel="noopener" class="link-preview" style="margin-top:.5rem">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Acessar material
+      </a>` : ''}
+    </div>`).join('')}
+  `;
+}
+
+window.toggleMatForm = function() {
+  document.getElementById('form-mat').classList.toggle('open');
+};
+
+window.addMaterial = async function() {
+  const t = document.getElementById('mat-titulo').value.trim();
+  if (!t) { alert('Informe um título.'); return; }
+  await addDoc(collection(db, 'materiais'), {
+    titulo: t,
+    tipo: document.getElementById('mat-tipo').value,
+    link: document.getElementById('mat-link').value,
+    desc: document.getElementById('mat-desc').value,
+    criadoEm: serverTimestamp()
+  });
+  document.getElementById('form-mat').classList.remove('open');
+  ['mat-titulo','mat-link','mat-desc'].forEach(id => document.getElementById(id).value = '');
+};
+
+window.deleteMaterial = async function(id) {
+  if (!confirm('Excluir este material?')) return;
+  await deleteDoc(doc(db, 'materiais', id));
+};
+
+function renderSaldo() {
+  const el = document.getElementById('saldo-container');
+  if (!el) return;
+
+  // Filtra publicados APENAS do mês visualizado no calendário
+  const pub = oficial.filter(o => {
+    if (o.status !== 'publicado') return false;
+    if (!o.data) return false;
+    const [y, m] = o.data.split('-');
+    return parseInt(y) === calYear && parseInt(m) === calMonth + 1;
+  });
+  
+  const reelsFeitos = pub.filter(o => o.tipo === 'Reel').length;
+  const postsFeitos = pub.filter(o => o.tipo === 'Post simples').length;
+  const carrosFeitos = pub.filter(o => o.tipo === 'Carrossel').length;
+
+  const reelsDiff = reelsFeitos - METAS['Reel'];
+  const postsDiff = postsFeitos - METAS['Post simples'];
+  const carrosDiff = carrosFeitos - METAS['Carrossel'];
+
+  const ajuste = (reelsDiff * PRECOS['Reel']) + (postsDiff * PRECOS['Post simples']) + (carrosDiff * PRECOS['Carrossel']);
+  const total = PACOTE_BASE + ajuste;
+
+  function diffBadge(diff, tipo) {
+    if (diff === 0) return `<span style="font-size:12px;color:var(--text-3)">conforme contrato</span>`;
+    const val = Math.abs(diff * PRECOS[tipo]);
+    const cor = diff > 0 ? 'var(--green-text)' : '#a32d2d';
+    const sinal = diff > 0 ? '+' : '-';
+    const label = diff > 0 ? `${diff} a mais` : `${Math.abs(diff)} a menos`;
+    return `<span style="font-size:12px;color:${cor};font-weight:500">${sinal}R$${val} (${label})</span>`;
+  }
+
+  el.innerHTML = `
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:.75rem;box-shadow:var(--shadow)">
+    <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:1rem">Resumo financeiro</div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem">
+      <div style="background:var(--bg);border-radius:var(--radius);padding:.75rem">
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px">Reels</div>
+        <div style="font-size:20px;font-weight:500;font-family:'DM Mono',monospace">${reelsFeitos}<span style="font-size:13px;color:var(--text-3)">/${METAS['Reel']}</span></div>
+        <div style="margin-top:4px">${diffBadge(reelsDiff, 'Reel')}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius);padding:.75rem">
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px">Posts simples</div>
+        <div style="font-size:20px;font-weight:500;font-family:'DM Mono',monospace">${postsFeitos}<span style="font-size:13px;color:var(--text-3)">/${METAS['Post simples']}</span></div>
+        <div style="margin-top:4px">${diffBadge(postsDiff, 'Post simples')}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius);padding:.75rem">
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px">Carrosseis</div>
+        <div style="font-size:20px;font-weight:500;font-family:'DM Mono',monospace">${carrosFeitos}<span style="font-size:13px;color:var(--text-3)">/${METAS['Carrossel']}</span></div>
+        <div style="margin-top:4px">${diffBadge(carrosDiff, 'Carrossel')}</div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--text-2)">Pacote base</span>
+        <span style="font-size:13px;font-family:'DM Mono',monospace">R$ ${PACOTE_BASE},00</span>
+      </div>
+      ${ajuste !== 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--text-2)">Ajuste</span>
+        <span style="font-size:13px;font-family:'DM Mono',monospace;color:${ajuste > 0 ? 'var(--green-text)' : '#a32d2d'}">${ajuste > 0 ? '+' : ''}R$ ${ajuste},00</span>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;background:${total >= PACOTE_BASE ? 'var(--green-light)' : '#fcebeb'};border-radius:var(--radius);padding:.75rem;margin-top:8px">
+        <span style="font-size:14px;font-weight:500;color:${total >= PACOTE_BASE ? 'var(--green-text)' : '#a32d2d'}">Total a receber</span>
+        <span style="font-size:20px;font-weight:500;font-family:'DM Mono',monospace;color:${total >= PACOTE_BASE ? 'var(--green-text)' : '#a32d2d'}">R$ ${total},00</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;box-shadow:var(--shadow)">
+    <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:.75rem">Tabela de preços unitários</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text-2)">Reel</span><span style="font-family:'DM Mono',monospace">R$ 85,00</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text-2)">Post simples</span><span style="font-family:'DM Mono',monospace">R$ 30,00</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text-2)">Carrossel</span><span style="font-family:'DM Mono',monospace">R$ 50,00</span></div>
+    </div>
+  </div>`;
+}
+
+const qSug = query(collection(db, 'sugestoes'), orderBy('criadoEm', 'asc'));
+onSnapshot(qSug, snap => {
+  sugestoes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderSugestoes();
+  setOnline();
+  document.getElementById('loading').classList.add('hidden');
+}, () => setOffline());
+
+const qOfic = query(collection(db, 'oficial'), orderBy('criadoEm', 'asc'));
+onSnapshot(qOfic, snap => {
+  oficial = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderOficial();
+  updateMetas();
+  renderSaldo();
+  setOnline();
+}, () => setOffline());
+
+window.abrirFormNaData = function(dateStr) {
+  // Garante que está na aba calendário
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-calendario').classList.add('visible');
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  // Abre formulário com data preenchida
+  const form = document.getElementById('form-ofic');
+  form.classList.add('open');
+  document.getElementById('o-data').value = dateStr;
+  document.getElementById('o-titulo').focus();
+  // Scroll para o formulário
+  setTimeout(() => form.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+};
+
+const qMat = query(collection(db, 'materiais'), orderBy('criadoEm', 'asc'));
+onSnapshot(qMat, snap => {
+  materiais = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (document.getElementById('tab-materiais').classList.contains('visible')) renderMateriais();
+}, () => {});
+
+window.showTab = function(tab, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('visible');
+  btn.classList.add('active');
+  if (tab === 'calendario') renderOficial();
+  if (tab === 'saldo') renderSaldo();
+  if (tab === 'materiais') renderMateriais();
+};
+
+window.toggleForm = function(type) { document.getElementById('form-' + type).classList.toggle('open'); };
+window.toggleEl = function(id) { const el = document.getElementById(id); if (el) el.classList.toggle('open'); };
+
+window.addSugestao = async function() {
+  const t = document.getElementById('s-titulo').value.trim();
+  if (!t) { alert('Informe um título.'); return; }
+  await addDoc(collection(db, 'sugestoes'), { titulo: t, desc: document.getElementById('s-desc').value, data: document.getElementById('s-data').value, tipo: document.getElementById('s-tipo').value, status: document.getElementById('s-status').value, comments: [], img: null, criadoEm: serverTimestamp() });
+  document.getElementById('form-sug').classList.remove('open');
+  ['s-titulo','s-desc','s-data'].forEach(id => document.getElementById(id).value = '');
+};
+
+window.addOficial = async function() {
+  const t = document.getElementById('o-titulo').value.trim();
+  if (!t) { alert('Informe um título.'); return; }
+  await addDoc(collection(db, 'oficial'), { titulo: t, desc: document.getElementById('o-desc').value, data: document.getElementById('o-data').value, tipo: document.getElementById('o-tipo').value, status: document.getElementById('o-status').value, comments: [], img: null, link: '', criadoEm: serverTimestamp() });
+  document.getElementById('form-ofic').classList.remove('open');
+  ['o-titulo','o-desc','o-data'].forEach(id => document.getElementById(id).value = '');
+};
+
+window.moverParaCalendario = async function(id) {
+  const s = sugestoes.find(x => x.id === id);
+  if (!s) return;
+  await addDoc(collection(db, 'oficial'), { titulo: s.titulo, desc: s.desc, data: s.data, tipo: s.tipo, status: 'aprovado', comments: s.comments||[], img: s.img||null, link: '', criadoEm: serverTimestamp() });
+  await deleteDoc(doc(db, 'sugestoes', id));
+};
+
+window.changeStatus = async function(type, id, val) {
+  await updateDoc(doc(db, type==='s'?'sugestoes':'oficial', id), { status: val });
+};
+
+window.addComment = async function(type, id) {
+  const input = document.getElementById(`ci-${type}-${id}`);
+  const val = input.value.trim();
+  if (!val) return;
+  const arr = type==='s' ? sugestoes : oficial;
+  const item = arr.find(x => x.id === id);
+  if (!item) return;
+  await updateDoc(doc(db, type==='s'?'sugestoes':'oficial', id), { comments: [...(item.comments||[]), val] });
+  input.value = '';
+  setTimeout(() => { const el = document.getElementById(`ca-${type}-${id}`); if (el) el.classList.add('open'); }, 100);
+};
+
+window.handleImg = function(event, type, id) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => { await updateDoc(doc(db, type==='s'?'sugestoes':'oficial', id), { img: e.target.result }); };
+  reader.readAsDataURL(file);
+};
+
+window.handleImgOficial = function(event, id) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => { await updateDoc(doc(db, 'oficial', id), { img: e.target.result }); setTimeout(() => { const a = document.getElementById(`anx-${id}`); if(a) a.classList.add('open'); }, 100); };
+  reader.readAsDataURL(file);
+};
+
+window.saveLink = async function(id, val) {
+  await updateDoc(doc(db, 'oficial', id), { link: val });
+  setTimeout(() => { const a = document.getElementById(`anx-${id}`); if(a) a.classList.add('open'); }, 100);
+};
+
+window.deleteSug = async function(id) { if (!confirm('Excluir esta sugestão?')) return; await deleteDoc(doc(db, 'sugestoes', id)); };
+window.deleteOfic = async function(id) { if (!confirm('Excluir este item?')) return; await deleteDoc(doc(db, 'oficial', id)); };
+</script>
+</body>
+</html>
