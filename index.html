@@ -180,6 +180,22 @@
     .form-grid { grid-template-columns: 1fr; }
     .anexo-grid { grid-template-columns: 1fr; }
   }
+
+  /* Fix inputs fundo escuro - override forçado */
+  input, textarea, select {
+    background-color: #2a2a2a !important;
+    color: #FFFFFF !important;
+    caret-color: #EECC02 !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: rgba(255,255,255,0.35) !important;
+  }
+  input:focus, textarea:focus, select:focus {
+    background-color: #333333 !important;
+    color: #FFFFFF !important;
+    border-color: #EECC02 !important;
+    outline: none !important;
+  }
 </style>
 </head>
 <body>
